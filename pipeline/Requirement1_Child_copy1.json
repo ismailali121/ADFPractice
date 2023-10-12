@@ -1,0 +1,40 @@
+{
+	"name": "Requirement1_Child_copy1",
+	"properties": {
+		"activities": [
+			{
+				"name": "Set variable1",
+				"type": "SetVariable",
+				"dependsOn": [],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "child var",
+					"value": {
+						"value": "@pipeline().parameters.data",
+						"type": "Expression"
+					}
+				}
+			}
+		],
+		"parameters": {
+			"data": {
+				"type": "array"
+			}
+		},
+		"variables": {
+			"child var": {
+				"type": "Array"
+			},
+			"Attachments_Output": {
+				"type": "String"
+			}
+		},
+		"annotations": [],
+		"lastPublishTime": "2023-10-11T10:36:10Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

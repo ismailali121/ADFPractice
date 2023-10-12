@@ -1,0 +1,127 @@
+{
+	"name": "SoapAPICopyActivity",
+	"properties": {
+		"activities": [
+			{
+				"name": "Copy data1",
+				"type": "Copy",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "XmlSource",
+						"storeSettings": {
+							"type": "HttpReadSettings",
+							"requestMethod": "POST",
+							"additionalHeaders": "Content-Type: text/xml; charset=utf-8\nSOAPAction: \"http://tempuri.org/Add\"",
+							"requestBody": {
+								"value": "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:tem=\"http://tempuri.org/\">\n   <soapenv:Header/>\n   <soapenv:Body>\n      <tem:Add> \n         <tem:intA>@{variables('Int1')}</tem:intA>\n         <tem:intB>@{variables('Int2')}</tem:intB>\n      </tem:Add>\n   </soapenv:Body>\n</soapenv:Envelope>\n",
+								"type": "Expression"
+							},
+							"requestTimeout": ""
+						},
+						"formatSettings": {
+							"type": "XmlReadSettings",
+							"validationMode": "none",
+							"namespaces": true
+						}
+					},
+					"sink": {
+						"type": "DelimitedTextSink",
+						"storeSettings": {
+							"type": "AzureBlobStorageWriteSettings"
+						},
+						"formatSettings": {
+							"type": "DelimitedTextWriteSettings",
+							"quoteAllText": true,
+							"fileExtension": ".txt"
+						}
+					},
+					"enableStaging": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"mappings": [
+							{
+								"source": {
+									"path": "$['soap:Envelope']['soap:Body']['AddResponse']['AddResult']"
+								},
+								"sink": {
+									"ordinal": 1
+								}
+							}
+						]
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "XmlDatasetSource",
+						"type": "DatasetReference"
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "SoapAPIResponseDS",
+						"type": "DatasetReference"
+					}
+				]
+			},
+			{
+				"name": "DataFlowSum",
+				"type": "ExecuteDataFlow",
+				"dependsOn": [
+					{
+						"activity": "Copy data1",
+						"dependencyConditions": [
+							"Completed"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"dataflow": {
+						"referenceName": "DataFlow_ResponseSum",
+						"type": "DataFlowReference"
+					},
+					"compute": {
+						"coreCount": 8,
+						"computeType": "General"
+					},
+					"traceLevel": "Fine"
+				}
+			}
+		],
+		"variables": {
+			"Int1": {
+				"type": "Integer",
+				"defaultValue": 40
+			},
+			"Int2": {
+				"type": "Integer",
+				"defaultValue": 60
+			},
+			"Sum": {
+				"type": "Integer"
+			},
+			"SetVarSum": {
+				"type": "Integer"
+			}
+		},
+		"annotations": [],
+		"lastPublishTime": "2023-09-20T13:15:59Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

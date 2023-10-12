@@ -1,0 +1,110 @@
+{
+	"name": "Child_ForEachAttachment",
+	"properties": {
+		"activities": [
+			{
+				"name": "ForEachAttachment",
+				"type": "ForEach",
+				"state": "Inactive",
+				"onInactiveMarkAs": "Succeeded",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@pipeline().parameters.Attachements",
+						"type": "Expression"
+					},
+					"activities": [
+						{
+							"name": "getAttachments",
+							"type": "WebActivity",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"method": "GET",
+								"headers": {
+									"AttachmentFileName": {
+										"value": "@item().AttachmentFileName",
+										"type": "Expression"
+									}
+								}
+							}
+						},
+						{
+							"name": "Append variable1",
+							"type": "AppendVariable",
+							"dependsOn": [
+								{
+									"activity": "getAttachments",
+									"dependencyConditions": [
+										"Completed"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "AllAttachments",
+								"value": {
+									"value": "@item()",
+									"type": "Expression"
+								}
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "Set variable1",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "ForEachAttachment",
+						"dependencyConditions": [
+							"Completed"
+						]
+					}
+				],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "pipelineReturnValue",
+					"value": [
+						{
+							"key": "Attachments_Output",
+							"value": {
+								"type": "String"
+							}
+						}
+					],
+					"setSystemVariable": true
+				}
+			}
+		],
+		"parameters": {
+			"Attachements": {
+				"type": "array"
+			}
+		},
+		"variables": {
+			"Attachments": {
+				"type": "Array"
+			},
+			"AllAttachments": {
+				"type": "Array"
+			}
+		},
+		"annotations": [],
+		"lastPublishTime": "2023-10-11T12:18:57Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

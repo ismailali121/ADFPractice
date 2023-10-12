@@ -1,0 +1,9 @@
+{
+	"name": "mySampleDf1234",
+	"location": "southindia",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "8a2398cd-7a5d-47df-86df-16af571a6207",
+		"tenantId": "01e018b0-3213-4919-bca3-356ca9b91485"
+	}
+}

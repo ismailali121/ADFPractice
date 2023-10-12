@@ -1,0 +1,817 @@
+{
+	"name": "CaseManagmentPipeline",
+	"properties": {
+		"activities": [
+			{
+				"name": "retrieveCaseId",
+				"type": "WebActivity",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"url": "https://reqres.in/api/users",
+					"method": "GET"
+				}
+			},
+			{
+				"name": "ForEach_CaseId",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "retrieveCaseId",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('retrieveCaseId').output.data",
+						"type": "Expression"
+					},
+					"isSequential": true,
+					"activities": [
+						{
+							"name": "validateCaseId",
+							"type": "WebActivity",
+							"state": "Inactive",
+							"onInactiveMarkAs": "Succeeded",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"method": "GET",
+								"headers": {
+									"kanaCaseId": {
+										"value": "@item().id",
+										"type": "Expression"
+									}
+								}
+							}
+						},
+						{
+							"name": "ExtractCaseDetails",
+							"type": "Copy",
+							"state": "Inactive",
+							"onInactiveMarkAs": "Succeeded",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "DelimitedTextSource",
+									"additionalColumns": [
+										{
+											"name": "Id",
+											"value": {
+												"value": "@variables('caseId')",
+												"type": "Expression"
+											}
+										},
+										{
+											"name": "Message",
+											"value": {
+												"value": "@variables('kanaMsg')",
+												"type": "Expression"
+											}
+										},
+										{
+											"name": "Attachement_id",
+											"value": {
+												"value": "@add(item().id, 10)",
+												"type": "Expression"
+											}
+										},
+										{
+											"name": "FileName",
+											"value": {
+												"value": "@item().avatar",
+												"type": "Expression"
+											}
+										}
+									],
+									"storeSettings": {
+										"type": "AzureBlobStorageReadSettings",
+										"recursive": true,
+										"enablePartitionDiscovery": false
+									},
+									"formatSettings": {
+										"type": "DelimitedTextReadSettings"
+									}
+								},
+								"sink": {
+									"type": "DelimitedTextSink",
+									"storeSettings": {
+										"type": "AzureBlobStorageWriteSettings"
+									},
+									"formatSettings": {
+										"type": "DelimitedTextWriteSettings",
+										"quoteAllText": true,
+										"fileExtension": ".txt"
+									}
+								},
+								"enableStaging": false,
+								"translator": {
+									"type": "TabularTranslator",
+									"mappings": [
+										{
+											"source": {
+												"name": "Id",
+												"type": "String"
+											},
+											"sink": {
+												"name": "Id",
+												"type": "String",
+												"physicalType": "String"
+											}
+										},
+										{
+											"source": {
+												"name": "Message",
+												"type": "String"
+											},
+											"sink": {
+												"name": "Message",
+												"type": "String",
+												"physicalType": "String"
+											}
+										},
+										{
+											"source": {
+												"name": "Attachement_id",
+												"type": "String"
+											},
+											"sink": {
+												"name": "Attachement_id",
+												"type": "String",
+												"physicalType": "String"
+											}
+										},
+										{
+											"source": {
+												"name": "FileName",
+												"type": "String"
+											},
+											"sink": {
+												"name": "FileName",
+												"type": "String",
+												"physicalType": "String"
+											}
+										}
+									],
+									"typeConversion": true,
+									"typeConversionSettings": {
+										"allowDataTruncation": true,
+										"treatBooleanAsNumber": false
+									}
+								}
+							},
+							"inputs": [
+								{
+									"referenceName": "ds_DummyDataset",
+									"type": "DatasetReference"
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "CaseDetails_Sink",
+									"type": "DatasetReference"
+								}
+							]
+						},
+						{
+							"name": "If_ValidCaseId",
+							"type": "IfCondition",
+							"dependsOn": [
+								{
+									"activity": "validateCaseId",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"expression": {
+									"value": "@equals(activity('validateCaseId').output.responseCode,0)",
+									"type": "Expression"
+								},
+								"ifTrueActivities": [
+									{
+										"name": "retrieveKanaMessages",
+										"type": "WebActivity",
+										"state": "Inactive",
+										"onInactiveMarkAs": "Succeeded",
+										"dependsOn": [],
+										"policy": {
+											"timeout": "0.12:00:00",
+											"retry": 0,
+											"retryIntervalInSeconds": 30,
+											"secureOutput": false,
+											"secureInput": false
+										},
+										"userProperties": [],
+										"typeProperties": {
+											"method": "GET",
+											"headers": {
+												"caseId": {
+													"value": "@item().id",
+													"type": "Expression"
+												}
+											}
+										}
+									},
+									{
+										"name": "ForEachAttachment",
+										"type": "ExecutePipeline",
+										"dependsOn": [
+											{
+												"activity": "retrieveKanaMessages",
+												"dependencyConditions": [
+													"Succeeded"
+												]
+											}
+										],
+										"userProperties": [],
+										"typeProperties": {
+											"pipeline": {
+												"referenceName": "Child_ForEachAttachment",
+												"type": "PipelineReference"
+											},
+											"waitOnCompletion": true,
+											"parameters": {
+												"Attachements": {
+													"value": "@activity('retrieveKanaMessages').output.attachmentList",
+													"type": "Expression"
+												}
+											}
+										}
+									},
+									{
+										"name": "Set variable2",
+										"type": "SetVariable",
+										"dependsOn": [
+											{
+												"activity": "ForEachAttachment",
+												"dependencyConditions": [
+													"Completed"
+												]
+											}
+										],
+										"policy": {
+											"secureOutput": false,
+											"secureInput": false
+										},
+										"userProperties": [],
+										"typeProperties": {
+											"variableName": "Attachments_Output",
+											"value": {
+												"value": "@activity('ForEachAttachment').output.pipelineReturnValue.Attachments_Output",
+												"type": "Expression"
+											}
+										}
+									},
+									{
+										"name": "ExtractData",
+										"type": "Copy",
+										"dependsOn": [
+											{
+												"activity": "Set variable2",
+												"dependencyConditions": [
+													"Completed"
+												]
+											}
+										],
+										"policy": {
+											"timeout": "0.12:00:00",
+											"retry": 0,
+											"retryIntervalInSeconds": 30,
+											"secureOutput": false,
+											"secureInput": false
+										},
+										"userProperties": [],
+										"typeProperties": {
+											"source": {
+												"type": "DelimitedTextSource",
+												"additionalColumns": [
+													{
+														"name": "Message Id",
+														"value": {
+															"value": "@activity('retrieveKanaMessages').output.messageId",
+															"type": "Expression"
+														}
+													},
+													{
+														"name": "Subject",
+														"value": {
+															"value": "@activity('retrieveKanaMessages').output.subject",
+															"type": "Expression"
+														}
+													},
+													{
+														"name": "Kana Message",
+														"value": {
+															"value": "@activity('retrieveKanaMessages').output.messageBody",
+															"type": "Expression"
+														}
+													},
+													{
+														"name": "CaseId",
+														"value": {
+															"value": "@item().id",
+															"type": "Expression"
+														}
+													},
+													{
+														"name": "Attachments",
+														"value": {
+															"value": "@variables('Attachments_Output')",
+															"type": "Expression"
+														}
+													}
+												],
+												"storeSettings": {
+													"type": "AzureBlobStorageReadSettings",
+													"recursive": true,
+													"enablePartitionDiscovery": false
+												},
+												"formatSettings": {
+													"type": "DelimitedTextReadSettings"
+												}
+											},
+											"sink": {
+												"type": "DelimitedTextSink",
+												"storeSettings": {
+													"type": "AzureBlobStorageWriteSettings",
+													"copyBehavior": "MergeFiles"
+												},
+												"formatSettings": {
+													"type": "DelimitedTextWriteSettings",
+													"quoteAllText": true,
+													"fileExtension": ".txt"
+												}
+											},
+											"enableStaging": false,
+											"translator": {
+												"type": "TabularTranslator",
+												"mappings": [
+													{
+														"source": {
+															"name": "Message Id",
+															"type": "String"
+														},
+														"sink": {
+															"name": "Message Id",
+															"type": "String",
+															"physicalType": "String"
+														}
+													},
+													{
+														"source": {
+															"name": "Subject",
+															"type": "String"
+														},
+														"sink": {
+															"name": "Subject",
+															"type": "String",
+															"physicalType": "String"
+														}
+													},
+													{
+														"source": {
+															"name": "Kana Message",
+															"type": "String"
+														},
+														"sink": {
+															"name": "Kana Message",
+															"type": "String",
+															"physicalType": "String"
+														}
+													},
+													{
+														"source": {
+															"name": "CaseId",
+															"type": "String"
+														},
+														"sink": {
+															"name": "CaseId",
+															"type": "String",
+															"physicalType": "String"
+														}
+													},
+													{
+														"source": {
+															"name": "Attachments",
+															"type": "String"
+														},
+														"sink": {
+															"name": "Attachments",
+															"type": "String",
+															"physicalType": "String"
+														}
+													}
+												],
+												"typeConversion": true,
+												"typeConversionSettings": {
+													"allowDataTruncation": true,
+													"treatBooleanAsNumber": false
+												}
+											}
+										},
+										"inputs": [
+											{
+												"referenceName": "ds_DummyDataset",
+												"type": "DatasetReference"
+											}
+										],
+										"outputs": [
+											{
+												"referenceName": "KanaCaseIdsOutput",
+												"type": "DatasetReference"
+											}
+										]
+									}
+								]
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "ForEach_AttachementId",
+				"type": "ForEach",
+				"state": "Inactive",
+				"onInactiveMarkAs": "Succeeded",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('retrieveCaseId').output.data[forEach('ForEach_AttachementId').current].id\n\n",
+						"type": "Expression"
+					},
+					"activities": [
+						{
+							"name": "getAttachment",
+							"type": "WebActivity",
+							"state": "Inactive",
+							"onInactiveMarkAs": "Succeeded",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"method": "GET"
+							}
+						},
+						{
+							"name": "Set variable1",
+							"type": "SetVariable",
+							"dependsOn": [],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "caseId",
+								"value": {
+									"value": "@item()",
+									"type": "Expression"
+								}
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "ForEach_CaseId_copy1",
+				"type": "ForEach",
+				"state": "Inactive",
+				"onInactiveMarkAs": "Succeeded",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('retrieveCaseId').output.data",
+						"type": "Expression"
+					},
+					"isSequential": true,
+					"activities": [
+						{
+							"name": "validateCaseId_copy1",
+							"type": "WebActivity",
+							"state": "Inactive",
+							"onInactiveMarkAs": "Succeeded",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"method": "GET",
+								"headers": {
+									"kanaCaseId": {
+										"value": "@item().id",
+										"type": "Expression"
+									}
+								},
+								"authentication": {
+									"type": "Basic",
+									"password": {
+										"type": "SecureString",
+										"value": "**********"
+									}
+								}
+							}
+						},
+						{
+							"name": "ExtractCaseDetails_copy1",
+							"type": "Copy",
+							"state": "Inactive",
+							"onInactiveMarkAs": "Succeeded",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "DelimitedTextSource",
+									"additionalColumns": [
+										{
+											"name": "Id",
+											"value": {
+												"value": "@variables('caseId')",
+												"type": "Expression"
+											}
+										},
+										{
+											"name": "Message",
+											"value": {
+												"value": "@variables('kanaMsg')",
+												"type": "Expression"
+											}
+										},
+										{
+											"name": "Attachement_id",
+											"value": {
+												"value": "@add(item().id, 10)",
+												"type": "Expression"
+											}
+										},
+										{
+											"name": "FileName",
+											"value": {
+												"value": "@item().avatar",
+												"type": "Expression"
+											}
+										}
+									],
+									"storeSettings": {
+										"type": "AzureBlobStorageReadSettings",
+										"recursive": true,
+										"enablePartitionDiscovery": false
+									},
+									"formatSettings": {
+										"type": "DelimitedTextReadSettings"
+									}
+								},
+								"sink": {
+									"type": "DelimitedTextSink",
+									"storeSettings": {
+										"type": "AzureBlobStorageWriteSettings"
+									},
+									"formatSettings": {
+										"type": "DelimitedTextWriteSettings",
+										"quoteAllText": true,
+										"fileExtension": ".txt"
+									}
+								},
+								"enableStaging": false,
+								"translator": {
+									"type": "TabularTranslator",
+									"mappings": [
+										{
+											"source": {
+												"name": "Id",
+												"type": "String"
+											},
+											"sink": {
+												"name": "Id",
+												"type": "String",
+												"physicalType": "String"
+											}
+										},
+										{
+											"source": {
+												"name": "Message",
+												"type": "String"
+											},
+											"sink": {
+												"name": "Message",
+												"type": "String",
+												"physicalType": "String"
+											}
+										},
+										{
+											"source": {
+												"name": "Attachement_id",
+												"type": "String"
+											},
+											"sink": {
+												"name": "Attachement_id",
+												"type": "String",
+												"physicalType": "String"
+											}
+										},
+										{
+											"source": {
+												"name": "FileName",
+												"type": "String"
+											},
+											"sink": {
+												"name": "FileName",
+												"type": "String",
+												"physicalType": "String"
+											}
+										}
+									],
+									"typeConversion": true,
+									"typeConversionSettings": {
+										"allowDataTruncation": true,
+										"treatBooleanAsNumber": false
+									}
+								}
+							},
+							"inputs": [
+								{
+									"referenceName": "ds_DummyDataset",
+									"type": "DatasetReference"
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "CaseDetails_Sink",
+									"type": "DatasetReference"
+								}
+							]
+						},
+						{
+							"name": "validateCaseId_var_copy1",
+							"type": "SetVariable",
+							"state": "Inactive",
+							"onInactiveMarkAs": "Succeeded",
+							"dependsOn": [],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "caseId",
+								"value": {
+									"value": "@item().id",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "retrieveKanaMsg_Var_copy1",
+							"type": "SetVariable",
+							"state": "Inactive",
+							"onInactiveMarkAs": "Succeeded",
+							"dependsOn": [
+								{
+									"activity": "validateCaseId_var_copy1",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "kanaMsg",
+								"value": {
+									"value": "@item().first_name",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "IfValidCaseId",
+							"type": "IfCondition",
+							"state": "Inactive",
+							"onInactiveMarkAs": "Succeeded",
+							"dependsOn": [
+								{
+									"activity": "validateCaseId_copy1",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"ifTrueActivities": [
+									{
+										"name": "retrieveKanaMessages_copy1",
+										"type": "WebActivity",
+										"state": "Inactive",
+										"onInactiveMarkAs": "Succeeded",
+										"dependsOn": [],
+										"policy": {
+											"timeout": "0.12:00:00",
+											"retry": 0,
+											"retryIntervalInSeconds": 30,
+											"secureOutput": false,
+											"secureInput": false
+										},
+										"userProperties": [],
+										"typeProperties": {
+											"method": "GET",
+											"headers": {
+												"caseId": {
+													"value": "@item().id",
+													"type": "Expression"
+												}
+											}
+										}
+									}
+								]
+							}
+						},
+						{
+							"name": "GetAttachmentsPipeline",
+							"type": "ExecutePipeline",
+							"dependsOn": [],
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "Child_ForEachAttachment",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true,
+								"parameters": {
+									"data": {
+										"value": "@item().id",
+										"type": "Expression"
+									}
+								}
+							}
+						}
+					]
+				}
+			}
+		],
+		"variables": {
+			"caseId": {
+				"type": "Integer"
+			},
+			"kanaMsg": {
+				"type": "String"
+			},
+			"Attachments_Output": {
+				"type": "String"
+			}
+		},
+		"annotations": [],
+		"lastPublishTime": "2023-10-11T12:18:57Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

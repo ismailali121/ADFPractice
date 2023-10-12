@@ -1,0 +1,47 @@
+{
+	"name": "GroupByAcc_DF_SepFileName",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "AccountInfo_Csv",
+						"type": "DatasetReference"
+					},
+					"name": "SourceCsvFile"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "GroupByOutput",
+						"type": "DatasetReference"
+					},
+					"name": "CsvFilesOutput"
+				}
+			],
+			"transformations": [
+				{
+					"name": "FileNameColumn"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          Name as string,",
+				"          Acc as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false) ~> SourceCsvFile",
+				"SourceCsvFile derive(FileName = 'CSV_Files/GroupByOutput/'+'AccNo-'+Acc+'.csv') ~> FileNameColumn",
+				"FileNameColumn sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     rowUrlColumn:'FileName',",
+				"     truncate: true,",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> CsvFilesOutput"
+			]
+		}
+	}
+}

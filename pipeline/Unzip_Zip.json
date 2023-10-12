@@ -1,0 +1,39 @@
+{
+	"name": "Unzip_Zip",
+	"properties": {
+		"activities": [
+			{
+				"name": "UnzipFile",
+				"type": "Custom",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"command": "python Unzip.py",
+					"resourceLinkedService": {
+						"referenceName": "AzureBlobStorage1",
+						"type": "LinkedServiceReference"
+					},
+					"folderPath": "data/Codes",
+					"referenceObjects": {
+						"linkedServices": [],
+						"datasets": []
+					}
+				},
+				"linkedServiceName": {
+					"referenceName": "BatchServiceLiknkedService",
+					"type": "LinkedServiceReference"
+				}
+			}
+		],
+		"annotations": [],
+		"lastPublishTime": "2023-09-18T10:11:40Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

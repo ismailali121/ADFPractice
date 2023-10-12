@@ -1,0 +1,42 @@
+{
+	"name": "GroupByAcc_dataflow",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "AccountInfo_Csv",
+						"type": "DatasetReference"
+					},
+					"name": "SourceCsvFile"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "GroupByOutput",
+						"type": "DatasetReference"
+					},
+					"name": "CsvFilesOutput"
+				}
+			],
+			"transformations": [],
+			"scriptLines": [
+				"source(output(",
+				"          Name as string,",
+				"          Acc as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false) ~> SourceCsvFile",
+				"SourceCsvFile sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     rowUrlColumn:'Acc',",
+				"     truncate: true,",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> CsvFilesOutput"
+			]
+		}
+	}
+}

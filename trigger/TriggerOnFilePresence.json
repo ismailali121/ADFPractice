@@ -1,0 +1,25 @@
+{
+	"name": "TriggerOnFilePresence",
+	"properties": {
+		"annotations": [],
+		"runtimeState": "Started",
+		"pipelines": [
+			{
+				"pipelineReference": {
+					"referenceName": "CopyOnFilePresence",
+					"type": "PipelineReference"
+				}
+			}
+		],
+		"type": "BlobEventsTrigger",
+		"typeProperties": {
+			"blobPathBeginsWith": "/folder1/blobs/",
+			"blobPathEndsWith": ".csv",
+			"ignoreEmptyBlobs": true,
+			"scope": "/subscriptions/f50ace85-ba7c-4f73-be46-d601d30cd9c1/resourceGroups/deme_rg/providers/Microsoft.Storage/storageAccounts/demostorageaccount900078",
+			"events": [
+				"Microsoft.Storage.BlobCreated"
+			]
+		}
+	}
+}
